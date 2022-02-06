@@ -2,8 +2,10 @@ from fastapi import FastAPI, HTTPException
 from starlette.status import HTTP_404_NOT_FOUND, HTTP_403_FORBIDDEN
 import requests
 from config import *
+from auth.routes import app as router
 
 app = FastAPI()
+app.include_router(router)
 
 @app.get("/api/login")
 async def login():
