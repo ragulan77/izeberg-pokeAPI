@@ -1,33 +1,39 @@
 from fastapi import APIRouter, Depends, HTTPException
 from .auth import AuthHandler
 from .credential import Credential
+from sql_app.crud import create_user, get_user_by_login
+from .database import SessionLocal, engine
+from sqlalchemy.orm import Session
+from . import crud, models, schemas
 
 
 app = APIRouter()
 
 
-auth_handler = AuthHandler()
-users = []
+models.Base.metadata.create_all(bind=engine)
 
-@app.post('/register', status_code=201)
-def register(auth_details: Credential):
-    if any(x['username'] == auth_details.username for x in users):
+# Dependency
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+auth_handler = AuthHandler()
+
+@app.post('/api/register', status_code=201)
+def register(auth_details: UserCreate, db: Session = Depends(get_db)):
+    user = get_user_by_login(db, auth_details.login)
+    if user is not None:
         raise HTTPException(status_code=400, detail='Username is taken')
-    hashed_password = auth_handler.get_password_hash(auth_details.password)
-    users.append({
-        'username': auth_details.username,
-        'password': hashed_password    
-    })
+    create_user(db, auth_details)
     return
 
 
-@app.post('/login')
-def login(auth_details: Credential):
-    user = None
-    for x in users:
-        if x['username'] == auth_details.username:
-            user = x
-            break
+@app.post('/api/login')
+def login(auth_details: Credential, db: Session = Depends(get_db)):
+    user = get_user_by_login()
     
     if (user is None) or (not auth_handler.verify_password(auth_details.password, user['password'])):
         raise HTTPException(status_code=401, detail='Invalid username and/or password')
