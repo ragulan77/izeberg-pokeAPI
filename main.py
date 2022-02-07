@@ -4,12 +4,10 @@ import requests
 from config import *
 from auth.routes import app as router
 
+
 app = FastAPI()
 app.include_router(router)
 
-@app.get("/api/login")
-async def login():
-    return {"message": "LOGIN"}
 
 
 @app.get("/api/group/{type}/add")
