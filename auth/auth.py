@@ -4,6 +4,9 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 
+from sql_app.schemas import UserBase
+
+from fastapi.encoders import jsonable_encoder
 
 class AuthHandler():
     security = HTTPBearer()
@@ -16,11 +19,11 @@ class AuthHandler():
     def verify_password(self, plain_password, hashed_password):
         return self.pwd_context.verify(plain_password, hashed_password)
 
-    def encode_token(self, user_id):
+    def encode_token(self, user: UserBase):
         payload = {
             'exp': datetime.utcnow() + timedelta(days=0, minutes=5),
             'iat': datetime.utcnow(),
-            'sub': user_id
+            'sub': jsonable_encoder(user)
         }
         return jwt.encode(
             payload,

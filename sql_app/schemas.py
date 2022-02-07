@@ -6,6 +6,12 @@ from pydantic import BaseModel
 class TypeBase(BaseModel):
     name: str
 
+class Type(TypeBase):
+    id: int
+
+    class Config:
+        orm_mode = True
+
 
 class UserBase(BaseModel):
     login: str
@@ -18,11 +24,7 @@ class UserCreate(UserBase):
     password: str
 
 
-class Type(TypeBase):
-    id: int
 
-    class Config:
-        orm_mode = True
 
 class TypeCreate(TypeBase):
     pass

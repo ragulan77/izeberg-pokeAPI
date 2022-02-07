@@ -1,8 +1,13 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Table
 from sqlalchemy.orm import relationship
 
 from .database import Base
 
+
+association_table = Table('UserType', Base.metadata,
+    Column('user_id', ForeignKey('users.id')),
+    Column('type_id', ForeignKey('types.id'))
+)
 
 class User(Base):
     __tablename__ = "users"
@@ -21,7 +26,3 @@ class Type(Base):
     name = Column(String, unique=True, index=True)
 
 
-association_table = Table('UserType', Base.metadata,
-    Column('user_id', ForeignKey('users.id')),
-    Column('type_id', ForeignKey('types.id'))
-)

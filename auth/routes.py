@@ -2,9 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from .auth import AuthHandler
 from .credential import Credential
 from sql_app.crud import create_user, get_user_by_login
-from .database import SessionLocal, engine
+from sql_app.database import SessionLocal, engine
 from sqlalchemy.orm import Session
-from . import crud, models, schemas
+from sql_app import crud, models, schemas
+from sql_app.schemas import UserBase, UserCreate
 
 
 app = APIRouter()
@@ -33,19 +34,15 @@ def register(auth_details: UserCreate, db: Session = Depends(get_db)):
 
 @app.post('/api/login')
 def login(auth_details: Credential, db: Session = Depends(get_db)):
-    user = get_user_by_login()
-    
-    if (user is None) or (not auth_handler.verify_password(auth_details.password, user['password'])):
+    user = get_user_by_login(db, auth_details.login)
+    if (user is None) or (not auth_handler.verify_password(auth_details.password, user.hashed_password)):
         raise HTTPException(status_code=401, detail='Invalid username and/or password')
-    token = auth_handler.encode_token(user['username'])
+    ub = UserBase(login=user.login, first_name=user.first_name, last_name=user.last_name, types=user.types)
+    token = auth_handler.encode_token(ub)
     return { 'token': token }
 
 
-@app.get('/unprotected')
-def unprotected():
-    return { 'hello': 'world' }
-
-
-@app.get('/protected')
-def protected(username=Depends(auth_handler.auth_wrapper)):
-    return { 'name': username }
+@app.get('/api/user/me')
+def me(token=Depends(auth_handler.auth_wrapper), db: Session = Depends(get_db)):
+    print(token)
+    return get_user_by_login(db, token['login'])
